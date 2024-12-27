@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: logs-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: setups-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: config-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: restapi-iot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: restapi-iot
+  template:
+    metadata:
+      labels:
+        app: restapi-iot
+    spec:
+      containers:
+        - name: restapi-iot
+          image: daksh-docker-release.arti.avl.com/avl/daksh/v1/main/tick:v1.0.13
+          ports:
+            - containerPort: 7000
+            - containerPort: 3001
+            - containerPort: 5001
+            - containerPort: 5002
+          volumeMounts:
+            - mountPath: /data
+              name: rest-api-volume
+      volumes:
+        - name: rest-api-volume
+          hostPath:
+            path: "C:/Migration/restapi/logs"
+            type: DirectoryOrCreate
+      imagePullSecrets:
+        - name: docker-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: restapi-iot-service
+spec:
+  selector:
+    app: restapi-iot
+  ports:
+    - name: port-7000
+      protocol: TCP
+      port: 7000
+      targetPort: 7000
+    - name: port-3001
+      protocol: TCP
+      port: 3001
+      targetPort: 3001
+    - name: port-5001
+      protocol: TCP
+      port: 5001
+      targetPort: 5001
+    - name: port-5002
+      protocol: TCP
+      port: 5002
+      targetPort: 5002
+  type: LoadBalancer
